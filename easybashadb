@@ -1,0 +1,38 @@
+#! /bin/sh
+
+# original https://codeberg.org/venenux/easybashadb
+# This script is a best-effort attempt to manage your phones and lauch scrcpy program and asome adb operations
+
+function main() {
+    echo "Easy Bash Gui ADB and SCRSCPY launcher"
+    ensure_commands
+}
+
+function ensure_commands() {
+
+    if ! which -a which >/dev/null 2>&1; then
+        ERROR=1
+        ERRORMSG="The which command not found install it"
+    fi
+
+    if ! which -a adb >/dev/null 2>&1; then
+        ERROR=1
+        ERRORMSG="The adb command not found install androit tools"
+    fi
+
+    ADBCMD=$(which adb | head -n1)
+    ADBVER=$($ADBC --version | grep Version | cut -d' ' -f2 | cut -d. -f1)
+
+    SCRCMD=$(which scrcpy | head -n1)
+    SCRVER=$($SCRCMD --version | grep scrcpy | cut -d' ' -f2)
+}
+
+function detect_musl() {
+    MUSL=0
+    musldetect=""
+    musldetect=$(ldd /bin/ls | grep 'musl')
+    if [ -n "$musldetect" ]; then
+        MUSL=1
+    fi
+}
+
