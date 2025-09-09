@@ -8,6 +8,8 @@ ERROR=0
 ERRORMSG=""
 MUSL=0
 ANDR=0
+DEVICELIST=""
+DEVICEPHON=""
 
 function ensure_commands() {
 
@@ -16,7 +18,7 @@ function ensure_commands() {
         ERRORMSG="$ERRORMSG error which command, .."
     fi
 
-    tty
+    tty >/dev/null 2>&1
     if [ $? -ne 0 ]; then
         ERROR=1
         ERRORMSG="$ERRORMSG missing 'tty' command, .."
@@ -48,7 +50,7 @@ function ensure_commands() {
 
 function detect_musl() {
     MUSL=0
-    musldetect=""
+    local musldetect=""
     musldetect=$(ldd /bin/ls | grep 'musl')
     if [ -n "$musldetect" ]; then
         MUSL=1
@@ -57,15 +59,47 @@ function detect_musl() {
 
 function detect_andr() {
     ANDR=0
-    andrdetect=""
+    local andrdetect=""
     andrdetect=$(adb shell getprop ro.build.version.sdk)
     if [ -n "$andrdetect" ]; then
         ANDR="$andrdetect"
     fi
 }
 
+function get_device_cable() {
+    local deviceslist
+    deviceslist=$(adb devices -l | sed 's/  */ /g' | cut -d' ' -f1 | tail -n +2)
+    DEVICELIST=$deviceslist
+}
+
+function show_devices_phone_selector() {
+    get_device_cable
+    local menu
+    local choice
+    menu $DEVICELIST
+    choice="$(0< "${dir_tmp}/${file_tmp}" )"
+    DEVICEPHON=$choice
+    clean_temp
+}
+
+function main_menu_always_for_phone() {
+    show_devices_phone_selector
+    while [ -z "$DEVICEPHON" ]; do
+        show_devices_phone_selector
+    done
+    ADB="$ADBCMD" $SCRCMD -s $DEVICEPHON
+}
+
 function main() {
 
+    export supertitle="SCRSCPY phone selector manager"
+    export supericon="system"
+    export supercontext="windows" # this is gui only program.. and need opengl for some operatinos
+    source easybashgui
+
+    main_menu_always_for_phone
+
+    clean_temp
 
 }
 
