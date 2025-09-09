@@ -1,29 +1,48 @@
 #! /bin/sh
 
 # original https://codeberg.org/venenux/easybashadb
-# This script is a best-effort attempt to manage your phones and lauch scrcpy program and asome adb operations
+# This script is a best-effort attempt to manage your phones 
+# and lauch scrcpy program and asome adb operations
 
-function main() {
-    echo "Easy Bash Gui ADB and SCRSCPY launcher"
-    ensure_commands
-}
+ERROR=0
+ERRORMSG=""
+MUSL=0
+ANDR=0
 
 function ensure_commands() {
 
     if ! which -a which >/dev/null 2>&1; then
         ERROR=1
-        ERRORMSG="The which command not found install it"
+        ERRORMSG="$ERRORMSG error which command, .."
+    fi
+
+    tty
+    if [ $? -ne 0 ]; then
+        ERROR=1
+        ERRORMSG="$ERRORMSG missing 'tty' command, .."
     fi
 
     if ! which -a adb >/dev/null 2>&1; then
         ERROR=1
-        ERRORMSG="The adb command not found install androit tools"
+        ERRORMSG="$ERRORMSG missing 'adb' command (androit-tools/sdk), .."
+    fi
+
+    SCRCMD=$(find /usr/local /opt -type f -iname scrcpy -print | head -n1)
+
+    if [ -z "$SCRCMD" ]; then
+        ERROR=1
+        ERRORMSG="$ERRORMSG missing 'scrcpy' command, .."
+    fi
+
+    if [ $ERROR -ne 0 ]; then
+        echo "$ERRORMSG"
+        exit 1
     fi
 
     ADBCMD=$(which adb | head -n1)
-    ADBVER=$($ADBC --version | grep Version | cut -d' ' -f2 | cut -d. -f1)
+    ADBVER=$($ADBCMD --version | grep Version | cut -d' ' -f2 | cut -d. -f1)
 
-    SCRCMD=$(which scrcpy | head -n1)
+    SCRCMD=$(find /usr/local /opt /usr/bin -type f -iname scrcpy -print | head -n1)
     SCRVER=$($SCRCMD --version | grep scrcpy | cut -d' ' -f2)
 }
 
@@ -36,3 +55,20 @@ function detect_musl() {
     fi
 }
 
+function detect_andr() {
+    ANDR=0
+    andrdetect=""
+    andrdetect=$(adb shell getprop ro.build.version.sdk)
+    if [ -n "$andrdetect" ]; then
+        ANDR="$andrdetect"
+    fi
+}
+
+function main() {
+
+
+}
+
+ensure_commands
+
+main
