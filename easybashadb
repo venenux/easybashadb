@@ -4,12 +4,23 @@
 # This script is a best-effort attempt to manage your phones 
 # and lauch scrcpy program and asome adb operations
 
+######## PART 1 ######### init values toma de variables de entorno basicas
+
+MSGCONSOLE="VENENUX phone manager; launcher usage is: \"easybashadb options ...\""
+DSESSION=$(echo $DESKTOP_SESSION)	# detectando el tipo de escritorio
+DDISPLAY=""
+INVOKENAME=$0			# programa de invocacion, por este y la extension sabremos que emulador usar
 ERROR=0
 ERRORMSG=""
 MUSL=0
 ANDR=0
+SUPT=0
 DEVICELIST=""
 DEVICEPHON=""
+ADBCMD=""
+ADBVER=""
+SCRCMD=""
+SCRVER=""
 
 function ensure_commands() {
 
@@ -57,6 +68,42 @@ function detect_musl() {
     fi
 }
 
+function detect_console_graphics() {
+    DIACMD=""
+    if [ -n "$WAYLAND_DISPLAY"  || -n "$DISPLAY" ]; then
+        DDISPLAY=1
+        if [ -n "$DSESSION" ]; then
+            case "$DSESSION" in
+                *kde*|*plasma*)
+                    DIACMD=$(which kdialog | head -n1)
+                    ;;
+                *lxqt*|*dde*|*deepin*)
+                    if [ -n "$WAYLAND_DISPLAY" ]; then
+                        DIACMD=$(which qarma | head -n1)
+                    else
+                        DIACMD=$(which yad | head -n1)
+                    fi
+                    ;;
+                *)
+                    if [ -n "$WAYLAND_DISPLAY" ]; then
+                        DIACMD=$(which yad | head -n1)
+                    fi
+                    ;;
+            esac
+        fi
+        if [ -z "$DIACMD" ]; then
+            DIACMD=$(which yad | head -n1)
+        fi
+        if [ -z "$DIACMD" ]; then
+            DIACMD=$(which zenity | head -n1)
+        fi
+        if [ -z "$DIACMD" ]; then
+            DIACMD=$(which dialog | head -n1)
+        fi
+    fi
+    ttydetect=$(tty)
+}
+
 function detect_andr() {
     ANDR=0
     local andrdetect=""
@@ -92,6 +139,7 @@ function main_menu_always_for_phone() {
 
 function main() {
 
+    export supermode="$DIACMD"
     export supertitle="SCRSCPY phone selector manager"
     export supericon="system"
     export supercontext="windows" # this is gui only program.. and need opengl for some operatinos
