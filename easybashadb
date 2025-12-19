@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # original https://codeberg.org/venenux/easybashadb
 # This script is a best-effort attempt to manage your phones 
