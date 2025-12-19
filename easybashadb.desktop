@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=EBG ADB phone manager
+GenericName=easybashadb GUI phone manager
+Type=Application
+Categories=Game;Emulator
+Exec=sh easybashgui
+Icon=system
