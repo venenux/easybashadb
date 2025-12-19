@@ -146,16 +146,26 @@ function show_devices_phone_selector() {
 
 function main_menu_always_for_phone() {
     show_devices_phone_selector
-    while [ -z "$DEVICEPHON" ]; do
-        show_devices_phone_selector
-    done
-    ADB="$ADBCMD" $SCRCMD -s $DEVICEPHON
+    if [ ${#DEVICEPHON} -gt 0 ]; then
+        ADB="$ADBCMD" $SCRCMD -s $DEVICEPHON
+        if [ $? -eq 0 ]; then
+            question "Phone $DEVICEPHON perfectly terminated. Do you want to end this manager?"
+            answer="${?}"
+            if [ ${answer} -ne 0 ]; then
+                show_devices_phone_selector
+            fi
+        else
+            alert_message "Program terminated but something happened, if you already have everithing good, ignore it"
+        fi
+    else
+        ok_message "See you later"
+    fi
 }
 
 function main() {
 
     export supermode="$DIACMD"
-    export supertitle="SCRSCPY phone selector manager"
+    export supertitle="easy bash gui SCRSCPY phone selector manager"
     export supericon="system"
     export supercontext="windows" # this is gui only program.. and need opengl for some operatinos
     source easybashgui
