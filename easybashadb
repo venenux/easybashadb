@@ -9,6 +9,7 @@
 MSGCONSOLE="VENENUX phone manager; launcher usage is: \"easybashadb options ...\""
 DSESSION=$(echo $DESKTOP_SESSION)	# detectando el tipo de escritorio
 DDISPLAY=""
+TTYTYPE=""
 INVOKENAME=$0			# programa de invocacion, por este y la extension sabremos que emulador usar
 ERROR=0
 ERRORMSG=""
@@ -59,19 +60,16 @@ function ensure_commands() {
     SCRVER=$($SCRCMD --version | grep scrcpy | cut -d' ' -f2)
 }
 
-function detect_musl() {
-    MUSL=0
-    local musldetect=""
-    musldetect=$(ldd /bin/ls | grep 'musl')
-    if [ -n "$musldetect" ]; then
-        MUSL=1
+function ensure_graphics() {
+    if [ ${#WAYLAND_DISPLAY} -gt 0 -o ${#DISPLAY} -gt 0 ]; then
+        DDISPLAY=1
+    else
+        TTYTYPE=$(tty)
     fi
 }
 
-function detect_console_graphics() {
+function ensure_dialog() {
     DIACMD=""
-    if [ -n "$WAYLAND_DISPLAY"  || -n "$DISPLAY" ]; then
-        DDISPLAY=1
         if [ -n "$DSESSION" ]; then
             case "$DSESSION" in
                 *kde*|*plasma*)
@@ -97,11 +95,28 @@ function detect_console_graphics() {
         if [ -z "$DIACMD" ]; then
             DIACMD=$(which zenity | head -n1)
         fi
-        if [ -z "$DIACMD" ]; then
+        if [ -z "$DIACMD" -o -z "$DDISPLAY" ]; then
             DIACMD=$(which dialog | head -n1)
+            ERRORMSG="No dialog backend (no program to display graphical interface, please install zenity or yad or similar for..."
+            ERROR=1
         fi
+        case "$TTYTYPE" in
+            *tty*)
+                DIACMD=$(which dialog | head -n1)
+                ERRORMSG="Running graphical session is mandatory"
+                ERROR=1
+                ;;
+        esac
+        DIACMD="${DIACMD##*/}"
+}
+
+function detect_musl() {
+    MUSL=0
+    local musldetect=""
+    musldetect=$(ldd /bin/ls | grep 'musl')
+    if [ -n "$musldetect" ]; then
+        MUSL=1
     fi
-    ttydetect=$(tty)
 }
 
 function detect_andr() {
@@ -152,5 +167,14 @@ function main() {
 }
 
 ensure_commands
+
+ensure_graphics
+
+ensure_dialog
+
+if [ $ERROR -ne 0 ]; then
+    echo "$ERRORMSG"
+    exit 1
+fi
 
 main
